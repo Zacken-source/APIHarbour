@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Catways - Port Russell</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">Port Russell</a>
+            <nav>
+                <ul>
+                    <li><a href="/dashboard">Dashboard</a></li>
+                    <li><a href="/catways-manage">Catways</a></li>
+                    <li><a href="/reservations-manage">Réservations</a></li>
+                    <li><a href="/users-manage">Utilisateurs</a></li>
+                    <li class="user-info"><span> <%= user.username %></span></li>
+                    <li><a href="/logout" class="btn btn-secondary btn-sm">Déconnexion</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <h1 class="page-title">Gestion des Catways</h1>
+
+        <div id="alert-container"></div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Liste des Catways</h2>
+                <button class="btn btn-primary" onclick="openModal()">
+                    Ajouter un Catway
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Numéro</th>
+                            <th>Type</th>
+                            <th>État</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="catways-list">
+                        <tr><td colspan="4" class="text-center">Chargement...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-title">Ajouter un Catway</h2>
+                <button class="close-modal" onclick="closeModal()">×</button>
+            </div>
+            <form id="catway-form">
+                <input type="hidden" id="catway-id">
+                <input type="hidden" id="form-mode" value="create">
+                
+                <div class="form-group">
+                    <label for="catwayNumber">Numéro *</label>
+                    <input type="number" id="catwayNumber" required min="1">
+                </div>
+
+                <div class="form-group">
+                    <label for="catwayType">Type *</label>
+                    <select id="catwayType" required>
+                        <option value="">Sélectionner...</option>
+                        <option value="short">Court (short)</option>
+                        <option value="long">Long (long)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="catwayState">État</label>
+                    <textarea id="catwayState" rows="3" placeholder="bon état"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">Enregistrer</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Port de Plaisance Russell</p>
+    </footer>
+
+    <script>
+        let catways = [];
+
+        async function loadCatways() {
+            try {
+                const response = await fetch('/catways');
+                catways = await response.json();
+                displayCatways();
+            } catch (error) {
+                showAlert('Erreur de chargement des catways', 'error');
+            }
+        }
+
+        function displayCatways() {
+            const tbody = document.getElementById('catways-list');
+            
+            if (catways.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">Aucun catway</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = catways.map(catway => `
+                <tr>
+                    <td><strong>#${catway.catwayNumber}</strong></td>
+                    <td>
+                        <span class="badge ${catway.catwayType === 'long' ? 'badge-info' : 'badge-success'}">
+                            ${catway.catwayType}
+                        </span>
+                    </td>
+                    <td>${catway.catwayState}</td>
+                    <td class="table-actions">
+                        <button class="btn btn-sm btn-primary" onclick="editCatway(${catway.catwayNumber})">
+                            Modifier
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteCatway(${catway.catwayNumber})">
+                            Supprimer
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openModal(catwayNumber = null) {
+            const modal = document.getElementById('modal');
+            const form = document.getElementById('catway-form');
+            const title = document.getElementById('modal-title');
+            const mode = document.getElementById('form-mode');
+
+            form.reset();
+
+            if (catwayNumber) {
+                const catway = catways.find(c => c.catwayNumber === catwayNumber);
+                title.textContent = 'Modifier le Catway #' + catwayNumber;
+                mode.value = 'edit';
+                document.getElementById('catway-id').value = catwayNumber;
+                document.getElementById('catwayNumber').value = catway.catwayNumber;
+                document.getElementById('catwayNumber').disabled = true;
+                document.getElementById('catwayType').value = catway.catwayType;
+                document.getElementById('catwayType').disabled = true;
+                document.getElementById('catwayState').value = catway.catwayState;
+            } else {
+                title.textContent = 'Ajouter un Catway';
+                mode.value = 'create';
+                document.getElementById('catwayNumber').disabled = false;
+                document.getElementById('catwayType').disabled = false;
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        function editCatway(catwayNumber) {
+            openModal(catwayNumber);
+        }
+
+        async function deleteCatway(catwayNumber) {
+            if (!confirm(`Supprimer le catway #${catwayNumber} ?`)) return;
+
+            try {
+                const response = await fetch(`/catways/${catwayNumber}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showAlert('Catway supprimé avec succès', 'success');
+                    loadCatways();
+                } else {
+                    const data = await response.json();
+                    showAlert(data.error || 'Erreur de suppression', 'error');
+                }
+            } catch (error) {
+                showAlert('Erreur de connexion', 'error');
+            }
+        }
+
+        document.getElementById('catway-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const mode = document.getElementById('form-mode').value;
+            const catwayNumber = document.getElementById('catwayNumber').value;
+            const catwayType = document.getElementById('catwayType').value;
+            const catwayState = document.getElementById('catwayState').value || 'bon état';
+
+            try {
+                let response;
+
+                if (mode === 'create') {
+                    response = await fetch('/catways', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ catwayNumber, catwayType, catwayState })
+                    });
+                } else {
+                    const id = document.getElementById('catway-id').value;
+                    response = await fetch(`/catways/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ catwayState })
+                    });
+                }
+
+                if (response.ok) {
+                    showAlert(mode === 'create' ? 'Catway créé' : 'Catway modifié', 'success');
+                    closeModal();
+                    loadCatways();
+                } else {
+                    const data = await response.json();
+                    showAlert(data.error || 'Erreur', 'error');
+                }
+            } catch (error) {
+                showAlert('Erreur de connexion', 'error');
+            }
+        });
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
+            container.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+            setTimeout(() => container.innerHTML = '', 5000);
+        }
+
+        loadCatways();
+    </script>
+</body>
+</html>

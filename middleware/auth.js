@@ -3,10 +3,16 @@ exports.isAuthenticated = (req, res, next) => {
     return next();
   }
 
-  if (req.path.startsWith('/api')) {
-    return res.status(401).json({ 
+  // 🔥 Détecter une requête AJAX / API
+  const isApiRequest =
+    req.originalUrl.startsWith('/catways') ||
+    req.originalUrl.startsWith('/users') ||
+    req.originalUrl.startsWith('/reservations');
+
+  if (isApiRequest) {
+    return res.status(401).json({
       error: 'Non authentifié',
-      message: 'Vous devez être connecté pour accéder à cette ressource'
+      message: 'Session expirée'
     });
   }
 

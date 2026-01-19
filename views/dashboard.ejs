@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Port Russell</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">
+                Port Russell
+            </a>
+            <nav>
+                <ul>
+                    <li><a href="/dashboard">Dashboard</a></li>
+                    <li><a href="/catways-manage">Catways</a></li>
+                    <li><a href="/reservations-manage">Réservations</a></li>
+                    <li><a href="/users-manage">Utilisateurs</a></li>
+                    <li class="user-info">
+                        <span> <%= user.username %></span>
+                    </li>
+                    <li><a href="/logout" class="btn btn-secondary btn-sm">Déconnexion</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <h1 class="page-title">Dashboard</h1>
+
+        <div class="stats-grid" id="stats">
+            <div class="stat-card">
+                <div class="stat-label">Total Catways</div>
+                <div class="stat-value" id="total-catways">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Réservations Actives</div>
+                <div class="stat-value" id="active-reservations"><%= currentReservations.length %></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Catways Disponibles</div>
+                <div class="stat-value" id="available-catways">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Taux d'occupation</div>
+                <div class="stat-value" id="occupation-rate">-</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Réservations en cours (au <%= today %>)</h2>
+            </div>
+
+            <% if (currentReservations.length === 0) { %>
+                <div class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <p>Aucune réservation active actuellement</p>
+                </div>
+            <% } else { %>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Catway</th>
+                                <th>Client</th>
+                                <th>Bateau</th>
+                                <th>Début</th>
+                                <th>Fin</th>
+                                <th>Durée</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% currentReservations.forEach(res => { 
+                                const start = new Date(res.startDate);
+                                const end = new Date(res.endDate);
+                                const today = new Date();
+                                const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                                const remaining = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+                            %>
+                            <tr>
+                                <td><strong>#<%= res.catwayNumber %></strong></td>
+                                <td><%= res.clientName %></td>
+                                <td><%= res.boatName %></td>
+                                <td><%= start.toLocaleDateString('fr-FR') %></td>
+                                <td><%= end.toLocaleDateString('fr-FR') %></td>
+                                <td>
+                                    <%= duration %> jours
+                                    <span class="badge badge-info">
+                                        <%= remaining %> jour<%= remaining > 1 ? 's' : '' %> restant<%= remaining > 1 ? 's' : '' %>
+                                    </span>
+                                </td>
+                            </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } %>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Actions rapides</h2>
+            </div>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <a href="/catways-manage" class="btn btn-primary">
+                    Gérer les Catways
+                </a>
+                <a href="/reservations-manage" class="btn btn-primary">
+                    Gérer les Réservations
+                </a>
+                <a href="/users-manage" class="btn btn-secondary">
+                    Gérer les Utilisateurs
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Port de Plaisance Russell</p>
+    </footer>
+
+    <script>
+        async function loadStats() {
+            try {
+                const response = await fetch('/catways');
+                const catways = await response.json();
+                
+                const totalCatways = catways.length;
+                const activeReservations = <%= currentReservations.length %>;
+                const availableCatways = totalCatways - activeReservations;
+                const occupationRate = totalCatways > 0 
+                    ? Math.round((activeReservations / totalCatways) * 100) 
+                    : 0;
+
+                document.getElementById('total-catways').textContent = totalCatways;
+                document.getElementById('available-catways').textContent = availableCatways;
+                document.getElementById('occupation-rate').textContent = occupationRate + '%';
+            } catch (error) {
+                console.error('Erreur chargement stats:', error);
+            }
+        }
+
+        loadStats();
+    </script>
+</body>
+</html>

@@ -24,6 +24,13 @@ router.get('/catways/:id/reservations', async (req, res) => {
   }
 });
 
+router.get('/reservations', async (req, res) => {
+  const reservations = await Reservation.find()
+    .sort({ catwayNumber: 1, startDate: -1 });
+  res.json(reservations);
+});
+
+
 router.get('/catways/:id/reservations/:idReservation', async (req, res) => {
   try {
     const catwayNumber = parseInt(req.params.id);

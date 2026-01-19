@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Port de Plaisance Russell</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .hero {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            color: white;
+            padding: 4rem 2rem;
+            text-align: center;
+            margin: -2rem -2rem 2rem -2rem;
+        }
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        .hero p {
+            font-size: 1.25rem;
+            opacity: 0.9;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .feature-title {
+            color: #1e3a8a;
+            margin-bottom: 0.5rem;
+        }
+        .cta-section {
+            text-align: center;
+            margin: 3rem 0;
+            padding: 3rem;
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">
+                Port Russell
+            </a>
+            <nav>
+                <ul>
+                    <% if (user) { %>
+                        <li><a href="/dashboard">Dashboard</a></li>
+                        <li><a href="/auth/logout" class="btn btn-secondary btn-sm">Déconnexion</a></li>
+                    <% } else { %>
+                        <li><a href="/auth/login" class="btn btn-primary btn-sm">Se connecter</a></li>
+                    <% } %>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="hero">
+        <h1>⚓ Bienvenue au Port de Plaisance Russell</h1>
+        <p>Système de gestion des réservations de catways</p>
+    </div>
+
+    <main>
+        <section class="intro card">
+            <h2 style="color: #1e3a8a; margin-bottom: 1rem;">À propos</h2>
+            <p>
+                Application de gestion des réservations de catways (appontements) du port de plaisance Russell.
+                Cette interface permet à la capitainerie de gérer efficacement les appontements
+                et les réservations des bateaux.
+            </p>
+        </section>
+
+        <section class="features">
+            <div class="feature-card">
+                <div class="feature-icon">🚢</div>
+                <h3 class="feature-title">Gestion des Catways</h3>
+                <p>Créez, modifiez et suivez l'état de tous vos appontements en temps réel.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📅</div>
+                <h3 class="feature-title">Réservations</h3>
+                <p>Gérez les réservations avec détection automatique des conflits de dates.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">👥</div>
+                <h3 class="feature-title">Utilisateurs</h3>
+                <p>Administration sécurisée des comptes utilisateurs et des accès.</p>
+            </div>
+        </section>
+
+        <section class="cta-section">
+            <h2 style="color: #1e3a8a; margin-bottom: 1rem;">Prêt à commencer ?</h2>
+            <p style="margin-bottom: 2rem; color: #64748b;">
+                Connectez-vous pour accéder au tableau de bord et gérer votre port.
+            </p>
+            <% if (user) { %>
+                <a href="/dashboard" class="btn btn-primary">Accéder au Dashboard</a>
+            <% } else { %>
+                <a href="/login" class="btn btn-primary">Se connecter</a>
+            <% } %>
+        </section>
+
+        <section class="card">
+            <h2 style="color: #1e3a8a; margin-bottom: 1rem;">Fonctionnalités principales</h2>
+            <ul style="list-style-position: inside; color: #64748b;">
+                <li style="margin-bottom: 0.5rem;">Interface web responsive et intuitive</li>
+                <li style="margin-bottom: 0.5rem;">API REST complète pour l'intégration</li>
+                <li style="margin-bottom: 0.5rem;">Authentification sécurisée</li>
+                <li style="margin-bottom: 0.5rem;">Gestion des conflits de réservation</li>
+                <li style="margin-bottom: 0.5rem;">Suivi en temps réel des disponibilités</li>
+                <li style="margin-bottom: 0.5rem;">Historique complet des opérations</li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Port de Plaisance Russell - Tous droits réservés</p>
+        <p style="margin-top: 0.5rem; font-size: 0.875rem;">
+            Système de gestion développé pour la capitainerie
+        </p>
+    </footer>
+</body>
+</html>

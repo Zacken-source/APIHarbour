@@ -6,7 +6,7 @@ const path = require('path');
 
 const app = express();
 
-//Connexion MongoDB
+// Connexion MongoDB
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('MongoDB connecté'))
   .catch(err => console.error('Erreur MongoDB:', err));
@@ -37,11 +37,6 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/', require('./routes/auth'));
-app.use('/catways', require('./routes/catways'));
-app.use('/', require('./routes/reservations'));
-app.use('/users', require('./routes/users'));
-
 const { isAuthenticated, isGuest } = require('./middleware/auth');
 
 app.get('/', (req, res) => {
@@ -52,10 +47,13 @@ app.get('/login', isGuest, (req, res) => {
   res.render('login');
 });
 
+app.use('/auth', require('./routes/auth'));
+
 app.get('/dashboard', isAuthenticated, async (req, res) => {
   try {
     const Reservation = require('./models/Reservation');
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
     const currentReservations = await Reservation.find({
       startDate: { $lte: today },
@@ -67,7 +65,7 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
       today: today.toLocaleDateString('fr-FR')
     });
   } catch (error) {
-    console.error('Erreur:', error);
+    console.error('Erreur dashboard:', error);
     res.status(500).send('Erreur serveur');
   }
 });
@@ -84,8 +82,26 @@ app.get('/users-manage', isAuthenticated, (req, res) => {
   res.render('users');
 });
 
+app.use('/catways', require('./routes/catways'));
+app.use('/', require('./routes/reservations'));
+app.use('/users', require('./routes/users'));
+
+app.get('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Erreur déconnexion:', err);
+    }
+    res.clearCookie('connect.sid');
+    res.redirect('/login');
+  });
+});
+
 app.use((req, res) => {
-  res.status(404).json({ error: 'Route non trouvée' });
+  res.status(404).render('404', { 
+    message: 'Page non trouvée' 
+  }).catch(() => {
+    res.status(404).json({ error: 'Page non trouvée' });
+  });
 });
 
 const PORT = process.env.PORT || 3000;

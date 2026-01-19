@@ -11,7 +11,12 @@
     "type": "git",
     "url": "git+https://github.com/Zacken-source/APIHarbour.git"
   },
-  "keywords": ["api", "port", "marina", "catway"],
+  "keywords": [
+    "api",
+    "port",
+    "marina",
+    "catway"
+  ],
   "author": "Zacken-source",
   "license": "ISC",
   "type": "commonjs",
@@ -26,6 +31,7 @@
     "ejs": "^4.0.1",
     "express": "^5.2.1",
     "express-session": "^1.18.2",
+    "mongodb": "^7.0.0",
     "mongoose": "^9.1.4",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Réservations - Port Russell</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <a href="/" class="logo">⚓ Port Russell</a>
+            <nav>
+                <ul>
+                    <li><a href="/dashboard">Dashboard</a></li>
+                    <li><a href="/catways-manage">Catways</a></li>
+                    <li><a href="/reservations-manage">Réservations</a></li>
+                    <li><a href="/users-manage">Utilisateurs</a></li>
+                    <li class="user-info"><span><%= user.username %></span></li>
+                    <li><a href="/logout" class="btn btn-secondary btn-sm">Déconnexion</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <h1 class="page-title">Gestion des Réservations</h1>
+
+        <div id="alert-container"></div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Filtrer par Catway</h2>
+            </div>
+            <div class="form-group">
+                <select id="catway-filter" class="btn">
+                    <option value="">Sélectionner un catway...</option>
+                </select>
+                <button class="btn btn-primary" onclick="openModal()">
+                    Nouvelle Réservation
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Liste des Réservations</h2>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Catway</th>
+                            <th>Client</th>
+                            <th>Bateau</th>
+                            <th>Début</th>
+                            <th>Fin</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reservations-list">
+                        <tr><td colspan="7" class="text-center">Sélectionnez un catway</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-title">Nouvelle Réservation</h2>
+                <button class="close-modal" onclick="closeModal()">×</button>
+            </div>
+            <form id="reservation-form">
+                <input type="hidden" id="reservation-id">
+                <input type="hidden" id="form-mode" value="create">
+                
+                <div class="form-group">
+                    <label for="modal-catwayNumber">Catway *</label>
+                    <select id="modal-catwayNumber" required>
+                        <option value="">Sélectionner...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="clientName">Nom du Client *</label>
+                    <input type="text" id="clientName" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="boatName">Nom du Bateau *</label>
+                    <input type="text" id="boatName" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="startDate">Date de Début *</label>
+                    <input type="date" id="startDate" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="endDate">Date de Fin *</label>
+                    <input type="date" id="endDate" required>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">Enregistrer</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Port de Plaisance Russell</p>
+    </footer>
+
+    <script>
+        let catways = [];
+        let reservations = [];
+        let selectedCatway = null;
+
+        async function loadCatways() {
+            try {
+                const response = await fetch('/catways');
+                catways = await response.json();
+                
+                const filterSelect = document.getElementById('catway-filter');
+                const modalSelect = document.getElementById('modal-catwayNumber');
+                
+                const options = catways.map(c => 
+                    `<option value="${c.catwayNumber}">Catway #${c.catwayNumber} (${c.catwayType})</option>`
+                ).join('');
+                
+                filterSelect.innerHTML = '<option value="">Tous les catways</option>' + options;
+                modalSelect.innerHTML = '<option value="">Sélectionner...</option>' + options;
+            } catch (error) {
+                showAlert('Erreur de chargement', 'error');
+            }
+        }
+
+        async function loadReservations(catwayNumber = null) {
+            try {
+                const url = catwayNumber
+                    ? `/catways/${catwayNumber}/reservations`
+                    : `/reservations`;
+
+                const response = await fetch(url);
+                reservations = await response.json();
+                displayReservations();
+            } catch (error) {
+                showAlert('Erreur de chargement', 'error');
+            }
+        }
+
+
+        function displayReservations() {
+            const tbody = document.getElementById('reservations-list');
+            
+            if (reservations.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">Aucune réservation</td></tr>';
+                return;
+            }
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            tbody.innerHTML = reservations.map(res => {
+                const start = new Date(res.startDate);
+                const end = new Date(res.endDate);
+                
+                let status = '';
+                let badgeClass = '';
+                
+                if (end < today) {
+                    status = 'Terminée';
+                    badgeClass = 'badge-secondary';
+                } else if (start > today) {
+                    status = 'À venir';
+                    badgeClass = 'badge-info';
+                } else {
+                    status = 'En cours';
+                    badgeClass = 'badge-success';
+                }
+
+                return `
+                    <tr>
+                        <td><strong>#${res.catwayNumber}</strong></td>
+                        <td>${res.clientName}</td>
+                        <td>${res.boatName}</td>
+                        <td>${start.toLocaleDateString('fr-FR')}</td>
+                        <td>${end.toLocaleDateString('fr-FR')}</td>
+                        <td><span class="badge ${badgeClass}">${status}</span></td>
+                        <td class="table-actions">
+                            <button class="btn btn-sm btn-primary" onclick="editReservation('${res._id}')">
+                                Modifier
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteReservation('${res._id}')">
+                                Supprimer
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function openModal(reservationId = null) {
+            const modal = document.getElementById('modal');
+            const form = document.getElementById('reservation-form');
+            const title = document.getElementById('modal-title');
+            const mode = document.getElementById('form-mode');
+
+            form.reset();
+
+            if (reservationId) {
+                const res = reservations.find(r => r._id === reservationId);
+                title.textContent = 'Modifier la Réservation';
+                mode.value = 'edit';
+                document.getElementById('reservation-id').value = res._id;
+                document.getElementById('modal-catwayNumber').value = res.catwayNumber;
+                document.getElementById('modal-catwayNumber').disabled = true;
+                document.getElementById('clientName').value = res.clientName;
+                document.getElementById('boatName').value = res.boatName;
+                document.getElementById('startDate').value = res.startDate.split('T')[0];
+                document.getElementById('endDate').value = res.endDate.split('T')[0];
+            } else {
+                title.textContent = 'Nouvelle Réservation';
+                mode.value = 'create';
+                document.getElementById('modal-catwayNumber').disabled = false;
+                if (selectedCatway) {
+                    document.getElementById('modal-catwayNumber').value = selectedCatway;
+                }
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        function editReservation(id) {
+            openModal(id);
+        }
+
+        async function deleteReservation(id) {
+            const res = reservations.find(r => r._id === id);
+            if (!confirm(`Supprimer la réservation de ${res.clientName} ?`)) return;
+
+            try {
+                const response = await fetch(`/catways/${res.catwayNumber}/reservations/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showAlert('Réservation supprimée', 'success');
+                    loadReservations(selectedCatway);
+                } else {
+                    const data = await response.json();
+                    showAlert(data.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Erreur de connexion', 'error');
+            }
+        }
+
+        document.getElementById('catway-filter').addEventListener('change', (e) => {
+            selectedCatway = e.target.value;
+            loadReservations(selectedCatway);
+        });
+
+        document.getElementById('reservation-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const mode = document.getElementById('form-mode').value;
+            const catwayNumber = document.getElementById('modal-catwayNumber').value;
+            const clientName = document.getElementById('clientName').value;
+            const boatName = document.getElementById('boatName').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            const data = { clientName, boatName, startDate, endDate };
+
+            try {
+                let response;
+
+                if (mode === 'create') {
+                    response = await fetch(`/catways/${catwayNumber}/reservations`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                } else {
+                    const id = document.getElementById('reservation-id').value;
+                    response = await fetch(`/catways/${catwayNumber}/reservations/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                }
+
+                if (response.ok) {
+                    showAlert(mode === 'create' ? 'Réservation créée' : 'Réservation modifiée', 'success');
+                    closeModal();
+                    loadReservations(catwayNumber);
+                    selectedCatway = catwayNumber;
+                    document.getElementById('catway-filter').value = catwayNumber;
+                } else {
+                    const result = await response.json();
+                    showAlert(result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Erreur de connexion', 'error');
+            }
+        });
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
+            container.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+            setTimeout(() => container.innerHTML = '', 5000);
+        }
+
+        loadCatways();
+        loadReservations();
+    </script>
+</body>
+</html>
